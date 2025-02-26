@@ -1,7 +1,7 @@
 import random
 import barcode
 from barcode.writer import ImageWriter
-from flask import Flask, render_template_string
+from flask import Flask, render_template_string, request, redirect, url_for
 import os
 
 app = Flask(__name__)
@@ -16,14 +16,16 @@ def generate_random_id():
     return prefix + suffix
 
 def generate_barcode(id_number):
-    code39 = barcode.get('code39', id_number, writer=ImageWriter())
+    code39 = barcode.Code39(id_number, writer=ImageWriter(), add_checksum=False)
     filename = code39.save(f'static/barcode_{id_number}')
     return f'static/barcode_{id_number}.png'
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    random_ids = [generate_random_id() for _ in range(10)]
-    barcodes = [(rid, generate_barcode(rid)) for rid in random_ids]
+    barcodes = []
+    if request.method == 'POST':
+        random_ids = [generate_random_id() for _ in range(10)]
+        barcodes = [(rid, generate_barcode(rid)) for rid in random_ids]
     html = '''
     <!DOCTYPE html>
     <html lang="en">
@@ -31,14 +33,27 @@ def index():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Random ID Generator</title>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            h1 { margin-bottom: 20px; }
+            .container { max-width: 600px; margin: 0 auto; }
+            .barcode { margin-bottom: 20px; }
+            button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        </style>
     </head>
     <body>
-        <h1>Generated IDs and Barcodes</h1>
-        <ul>
+        <h1>Random ID Generator</h1>
+        <form method="POST">
+            <button type="submit">Generate IDs and Barcodes</button>
+        </form>
+        <div class="container">
             {% for rid, barcode in barcodes %}
-                <li>{{ rid }}<br><img src="{{ barcode }}" alt="Barcode for {{ rid }}"></li>
+                <div class="barcode">
+                    <p>ID: {{ rid }}</p>
+                    <img src="{{ barcode }}" alt="Barcode for {{ rid }}">
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     </body>
     </html>
     '''
