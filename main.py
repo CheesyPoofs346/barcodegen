@@ -2,8 +2,12 @@ import random
 import barcode
 from barcode.writer import ImageWriter
 from flask import Flask, render_template_string
+import os
 
 app = Flask(__name__)
+
+# Ensure static directory exists
+os.makedirs('static', exist_ok=True)
 
 def generate_random_id():
     prefixes = ['3010', '3011', '3012']
@@ -41,4 +45,5 @@ def index():
     return render_template_string(html, barcodes=barcodes)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
